@@ -17,7 +17,7 @@ The script is divided into several parts: loading the required packages, solving
 
 ## Setup and Package Loading
 We start by loading the necessary packages and modules:
-```julia	
+```julia
 using LinearAlgebra
 using BlockDiagonals
 include("sssanalysis.jl")
@@ -26,20 +26,54 @@ using .ymatrix # Import the module ymatrix.
 using .solvelf # Import the module solvelf.
 ```
 
+
+
+
 # Solving the load flow problem.
 The load flow solution provides the equilibrium point from which we will calculate linear models of the generators and loads.
 To calculate the load flow, we first needed to define the static data of the network in the file `bs_2area4gen.m`.
 The function `solvelf_pm` is used to solve the load flow problem with the `PowerModels.jl` package ([documentation](https://lanl-ansi.github.io/PowerModels.jl/stable/)).
 
-```julia; results="hidden"
+```julia
 Sb, result, data = solvelf_pm("bs_2area4gen.m")
 ```
+
+
+
 
 # Admittance matrix
 Next, we create the expanded admittance matrix:
 ```julia
 Y_ex = yexmatrix(data)
 ```
+
+```
+22×22 Matrix{Float64}:
+   0.0    -60.241   0.0      0.0    …     0.0        0.0       0.0
+  60.241    0.0     0.0      0.0          0.0        0.0       0.0
+   0.0      0.0     0.0    -60.241        0.0        0.0       0.0
+   0.0      0.0    60.241    0.0          0.0        0.0       0.0
+   0.0      0.0     0.0      0.0          0.0        0.0      60.241
+   0.0      0.0     0.0      0.0    …     0.0      -60.241     0.0
+   0.0      0.0     0.0      0.0         60.241      0.0       0.0
+   0.0      0.0     0.0      0.0          0.0        0.0       0.0
+   0.0     60.241   0.0      0.0          0.0        0.0       0.0
+ -60.241    0.0     0.0      0.0          0.0        0.0       0.0
+   ⋮                                ⋱                ⋮       
+   0.0      0.0     0.0      0.0          0.0        0.0       0.0
+   0.0      0.0     0.0      0.0          0.0        0.0       0.0
+   0.0      0.0     0.0      0.0    …     0.0        0.0       0.0
+   0.0      0.0     0.0      0.0         99.0099     0.0       0.0
+   0.0      0.0     0.0      0.0         -9.90099    0.0       0.0
+   0.0      0.0     0.0      0.0       -198.824     -3.9604   39.604
+   0.0      0.0     0.0      0.0         13.8614   -39.604    -3.9604
+   0.0      0.0     0.0      0.0    …    39.604      3.9604  -99.823
+   0.0      0.0     0.0      0.0         -3.9604    99.823     3.9604
+```
+
+
+
+
 
 # Linear model of loads
 We model the loads using constant current (m=1) and constant impedance (n=2) characteristics. The load admittance matrix is then added to the expanded admittance matrix. The load model is implemented in the `ymatrixload.jl` function, and the theoretical background is provided at [this link](https://cresym.github.io/WOLF-I/2024/08/30/small-signal-stability-of-multimachine-systems.html).
@@ -56,6 +90,34 @@ Y_ex[2*7-1:2*7, 2*7-1:2*7] += Yl1
 Y_ex[2*9-1:2*9, 2*9-1:2*9] += Yl2
 Y_ex
 ```
+
+```
+22×22 Matrix{Float64}:
+   0.0    -60.241   0.0      0.0    …     0.0        0.0       0.0
+  60.241    0.0     0.0      0.0          0.0        0.0       0.0
+   0.0      0.0     0.0    -60.241        0.0        0.0       0.0
+   0.0      0.0    60.241    0.0          0.0        0.0       0.0
+   0.0      0.0     0.0      0.0          0.0        0.0      60.241
+   0.0      0.0     0.0      0.0    …     0.0      -60.241     0.0
+   0.0      0.0     0.0      0.0         60.241      0.0       0.0
+   0.0      0.0     0.0      0.0          0.0        0.0       0.0
+   0.0     60.241   0.0      0.0          0.0        0.0       0.0
+ -60.241    0.0     0.0      0.0          0.0        0.0       0.0
+   ⋮                                ⋱                ⋮       
+   0.0      0.0     0.0      0.0          0.0        0.0       0.0
+   0.0      0.0     0.0      0.0          0.0        0.0       0.0
+   0.0      0.0     0.0      0.0    …     0.0        0.0       0.0
+   0.0      0.0     0.0      0.0         99.0099     0.0       0.0
+   0.0      0.0     0.0      0.0         -9.90099    0.0       0.0
+   0.0      0.0     0.0      0.0       -198.824     -3.9604   39.604
+   0.0      0.0     0.0      0.0         13.8614   -39.604    -3.9604
+   0.0      0.0     0.0      0.0    …    39.604      3.9604  -99.823
+   0.0      0.0     0.0      0.0         -3.9604    99.823     3.9604
+```
+
+
+
+
 
 # Linear models of generators
 The classical generator model is implemented in the `ssmatrixclgen.jl` function. The theoretical background for this model is provided [here](https://cresym.github.io/WOLF-I/2024/09/02/small-signal-stability-of-multimachine-systems.html).
@@ -79,8 +141,27 @@ display(A1)
 display(B1)
 display(C1)
 display(D1)
+```
 
 ```
+Example of the matrices of the generator 1. In this order: A, B, C, D
+2×2 Matrix{Float64}:
+   0.0    -0.288771
+ 376.991   0.0
+2×2 Matrix{Float64}:
+  0.224365  -0.177077
+ -0.0        0.0
+2×2 Matrix{Float64}:
+ -0.0  21.1527
+  0.0  25.9017
+2×2 Matrix{Float64}:
+  -0.249983  29.9979
+ -29.9979    -0.249983
+```
+
+
+
+
 
 # Golbal matrices of the two-area Kundur system
 Now we construct the global matrices for the entire system by combining the linear models of the generators with the expanded admittance matrix (that includes the linear model of loads). The theoretical background for this process can be found [here](https://cresym.github.io/WOLF-I/2024/07/30/small-signal-stability-of-multimachine-systems.html):
@@ -111,14 +192,47 @@ A = Ad+Bd*((Y_ex-Dd)\Cd)
 
 println("Multimachine A matrix:")
 display(A)
-```	 
+```
+
+```
+Multimachine A matrix:
+8×8 Matrix{Float64}:
+   0.0    -0.0686602     0.0    …   0.00353248    0.0     0.00291799
+ 376.991   0.0           0.0        0.0           0.0     0.0
+   0.0     0.0650855     0.0        0.00690358    0.0     0.00746521
+   0.0     0.0         376.991      0.0           0.0     0.0
+   0.0     0.00663027    0.0       -0.0755119     0.0     0.0587131
+   0.0     0.0           0.0    …   0.0           0.0     0.0
+   0.0     0.00971995    0.0        0.0645026     0.0    -0.0901967
+   0.0     0.0           0.0        0.0         376.991   0.0
+```
+
+
+
+
 
 # Eigenvalues of the multimachine model
 We can analyze the system stability by calculating its eigenvalues:
-```julia	
+```julia
 lambda = eigvals(A)
 l = round.(lambda,digits=2)
 ```
+
+```
+8-element Vector{ComplexF64}:
+ -0.0 - 7.21im
+ -0.0 + 7.21im
+  0.0 - 3.41im
+  0.0 + 3.41im
+  0.0 - 0.0im
+  0.0 + 0.0im
+  0.0 - 7.4im
+  0.0 + 7.4im
+```
+
+
+
+
 
 This completes our linear model of the two-area, four-generator system. The eigenvalues offer insights into the system's stability characteristics.
 
