@@ -1,9 +1,9 @@
 using PowerModels
 
-# Function for solving the LF and extracting valuable information.
 module solvelf
 using ..PowerModels
 export solvelf_pm
+# Function for solving the LF and extracting valuable information.
 function solvelf_pm(data0)
     data = PowerModels.parse_file(data0) # Parse the data file to a dictionary 
     # Solving the load flow problem using PowerModels.jl
@@ -17,10 +17,11 @@ function solvelf_pm(data0)
 end
 end # module
 
-# Function for creating the expanded admittance matrix.
+
 module ymatrix
 using ..PowerModels
 export yexmatrix, ymatrixload
+# Function for creating the expanded admittance matrix.
 function yexmatrix(data)
     # Admittance matrix
     Y = calc_admittance_matrix(data).matrix 
@@ -35,6 +36,7 @@ function yexmatrix(data)
     return Y_ex
 end
 
+# Function for creating the load admittance matrix.
 function ymatrixload(m,n,vm,va,PL0,QL0)
     vR = vm*cos(va)
     vI = vm*sin(va)
@@ -49,11 +51,11 @@ function ymatrixload(m,n,vm,va,PL0,QL0)
 end 
 end # module
 
-# Functions for creating space state matrix of dynamic devices.
+
 module ssmatrix
 export ssmatrixclgen
 export ssmatrixgen1d2q
-
+# Functions for creating space state matrix of dynamic devices.
 function ssmatrixclgen(H,KD,f,Ra,Xd,vm,va,pg,qg,Sb,Sbg)
     # Parameters of the synchronous generator in the p.u. global system.
     ra = Ra*Sb/Sbg

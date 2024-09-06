@@ -1,4 +1,4 @@
-function mpc = ieee2area4gen
+function mpc = bs_2area4gen
 mpc.version = '2';
 mpc.baseMVA = 100.0;
 
